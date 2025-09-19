@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhisperLive JavaScript Client Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .config-toggle {
+            display: inline-block;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            user-select: none;
+            text-align: center;
+            line-height: 38px;
+            font-size: 16px;
+            transition: all 0.2s;
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .config-toggle:hover {
+            background: #e9ecef;
+            transform: scale(1.05);
+        }
+
+        .config-section {
+            background: none;
+            padding: 0;
+            border-radius: 0;
+            margin-bottom: 20px;
+        }
+
+        .config-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .config-content.hidden {
+            max-height: 0;
+            padding: 0;
+            margin: 0;
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .record-icon-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-icon-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .record-icon-btn.recording {
+            background: #dc3545;
+            animation: pulse-red 2s infinite;
+        }
+
+        .record-icon-btn.recording:hover {
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-item label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .config-item input, .config-item select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+
+        .status.connecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.hidden {
+            display: none;
+        }
+
+        .transcription-area {
+            background: #ffffff;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 200px;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        .transcription-header {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #dc3545;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .translation-area {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 150px;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        .logs-area {
+            background: #212529;
+            color: #28a745;
+            border-radius: 8px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- <h1>🎤 WhisperLive JavaScript Client</h1> -->
+        
+        <div class="header-controls">
+            <div class="config-toggle" id="configToggle">⚙️</div>
+            <button id="recordBtn" class="record-icon-btn">🎤</button>
+        </div>
+
+        <div class="config-section collapsed">
+            <div class="config-content hidden">
+                <div class="config-grid">
+                    <div class="config-item">
+                        <label for="host">Host:</label>
+                        <input type="text" id="host" value="laptop-stevenli.tailc2559b.ts.net">
+                    </div>
+                    <div class="config-item">
+                        <label for="port">Port:</label>
+                        <input type="number" id="port" value="9091">
+                    </div>
+                    <div class="config-item">
+                        <label for="model">Model:</label>
+                        <select id="model">
+                            <option value="tiny">tiny</option>
+                            <option value="base">base</option>
+                            <option value="small">small</option>
+                            <option value="medium">medium</option>
+                            <option value="large">large</option>
+                            <option value="turbo" selected>turbo</option>
+                        </select>
+                    </div>
+                    <div class="config-item">
+                        <label for="language">Language:</label>
+                        <select id="language">
+                            <option value="">Auto-detect</option>
+                            <option value="en" selected>English</option>
+                            <option value="zh">Chinese</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                        </select>
+                    </div>
+                    <div class="config-item checkbox-item">
+                        <input type="checkbox" id="useVad" checked>
+                        <label for="useVad">Use VAD (Voice Activity Detection)</label>
+                    </div>
+                    <div class="config-item checkbox-item">
+                        <input type="checkbox" id="useWss" checked>
+                        <label for="useWss">Use Secure WebSocket (WSS)</label>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px solid #dee2e6; padding-top: 15px; margin-top: 15px;">
+                    <div class="checkbox-item" style="margin-bottom: 10px;">
+                        <input type="checkbox" id="enableTranslation">
+                        <label for="enableTranslation">Enable Translation</label>
+                    </div>
+                    <div class="config-item" id="translationTarget" style="display: none;">
+                        <label for="targetLanguage">Target Language:</label>
+                        <select id="targetLanguage">
+                            <option value="zh">Chinese</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr" selected>French</option>
+                            <option value="de">German</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="status" class="status hidden">Ready to start</div>
+
+        <div id="transcriptionSection">
+            <div class="transcription-header">
+                <span id="liveIndicator" class="live-indicator hidden"></span>
+                Live Transcription:
+            </div>
+            <div id="transcription" class="transcription-area">Transcription will appear here...</div>
+        </div>
+
+        <div id="translationSection" class="hidden">
+            <div class="transcription-header">Translation:</div>
+            <div id="translation" class="translation-area">Translation will appear here...</div>
+        </div>
+
+        <div class="transcription-header">Console Logs:</div>
+        <div id="logs" class="logs-area"></div>
+    </div>
+
+    <script src="whisperlive-client-standalone.js"></script>
+    <script>
+        let client = null;
+        let isRecording = false;
+
+        // DOM elements
+        const recordBtn = document.getElementById('recordBtn');
+        const status = document.getElementById('status');
+        const transcriptionDiv = document.getElementById('transcription');
+        const translationDiv = document.getElementById('translation');
+        const translationSection = document.getElementById('translationSection');
+        const liveIndicator = document.getElementById('liveIndicator');
+        const logsDiv = document.getElementById('logs');
+        const configToggle = document.getElementById('configToggle');
+        const configSection = document.querySelector('.config-section');
+        const configContent = document.querySelector('.config-content');
+        
+        // Configuration elements
+        const hostInput = document.getElementById('host');
+        const portInput = document.getElementById('port');
+        const modelSelect = document.getElementById('model');
+        const languageSelect = document.getElementById('language');
+        const useVadCheckbox = document.getElementById('useVad');
+        const useWssCheckbox = document.getElementById('useWss');
+        const enableTranslationCheckbox = document.getElementById('enableTranslation');
+        const targetLanguageSelect = document.getElementById('targetLanguage');
+        const translationTarget = document.getElementById('translationTarget');
+
+        // LocalStorage persistence
+        const STORAGE_KEY = 'whisperlive_demo_options_v1';
+
+        function saveConfig() {
+            try {
+                const cfg = {
+                    host: hostInput.value.trim(),
+                    port: portInput.value,
+                    model: modelSelect.value,
+                    language: languageSelect.value,
+                    useVad: useVadCheckbox.checked,
+                    useWss: useWssCheckbox.checked,
+                    enableTranslation: enableTranslationCheckbox.checked,
+                    targetLanguage: targetLanguageSelect.value
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+            } catch (e) {
+                console.warn('Failed to save options to localStorage:', e);
+            }
+        }
+
+        function loadConfig() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const cfg = JSON.parse(raw);
+
+                if (typeof cfg.host === 'string') hostInput.value = cfg.host;
+                if (cfg.port !== undefined && cfg.port !== null) portInput.value = cfg.port;
+                if (typeof cfg.model === 'string') modelSelect.value = cfg.model;
+                if (typeof cfg.language !== 'undefined') languageSelect.value = cfg.language;
+                if (typeof cfg.useVad === 'boolean') useVadCheckbox.checked = cfg.useVad;
+                if (typeof cfg.useWss === 'boolean') useWssCheckbox.checked = cfg.useWss;
+                if (typeof cfg.enableTranslation === 'boolean') enableTranslationCheckbox.checked = cfg.enableTranslation;
+                if (typeof cfg.targetLanguage === 'string') targetLanguageSelect.value = cfg.targetLanguage;
+
+                // Reflect translation UI based on loaded state
+                if (enableTranslationCheckbox.checked) {
+                    translationTarget.style.display = 'block';
+                    translationSection.classList.remove('hidden');
+                } else {
+                    translationTarget.style.display = 'none';
+                    translationSection.classList.add('hidden');
+                }
+            } catch (e) {
+                console.warn('Failed to load options from localStorage:', e);
+            }
+        }
+
+        // Load saved options on startup
+        loadConfig();
+
+        // Config section toggle
+        configToggle.addEventListener('click', () => {
+            configSection.classList.toggle('collapsed');
+            configContent.classList.toggle('hidden');
+        });
+
+        // Translation toggle
+        enableTranslationCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                translationTarget.style.display = 'block';
+                translationSection.classList.remove('hidden');
+            } else {
+                translationTarget.style.display = 'none';
+                translationSection.classList.add('hidden');
+            }
+            saveConfig();
+        });
+
+        // Save on option changes
+        hostInput.addEventListener('input', saveConfig);
+        portInput.addEventListener('input', saveConfig);
+        modelSelect.addEventListener('change', saveConfig);
+        languageSelect.addEventListener('change', saveConfig);
+        useVadCheckbox.addEventListener('change', saveConfig);
+        useWssCheckbox.addEventListener('change', saveConfig);
+        targetLanguageSelect.addEventListener('change', saveConfig);
+
+        // Custom console logging
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalClear = console.clear;
+
+        function addToLogs(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            
+            const logElement = document.createElement('div');
+            logElement.textContent = logEntry;
+            
+            if (type === 'error') {
+                logElement.style.color = '#dc3545';
+            } else if (type === 'warn') {
+                logElement.style.color = '#ffc107';
+            } else {
+                logElement.style.color = '#28a745';
+            }
+            
+            logsDiv.appendChild(logElement);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLogs(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLogs(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLogs(args.join(' '), 'warn');
+        };
+
+        console.clear = function() {
+            originalClear.apply(console);
+            logsDiv.innerHTML = '';
+        };
+
+        // Transcription callback
+        function onTranscription(text, segments) {
+            transcriptionDiv.textContent = text;
+        }
+
+        // Translation callback
+        function onTranslation(text, segments) {
+            translationDiv.textContent = text;
+        }
+
+        // Record button toggle
+        recordBtn.addEventListener('click', async () => {
+            if (!isRecording) {
+                // Start recording
+                try {
+                    // Get configuration
+                    const config = {
+                        host: hostInput.value.trim(),
+                        port: parseInt(portInput.value),
+                        lang: languageSelect.value || null,
+                        model: modelSelect.value,
+                        use_vad: useVadCheckbox.checked,
+                        use_wss: useWssCheckbox.checked,
+                        transcription_callback: onTranscription,
+                        enable_translation: enableTranslationCheckbox.checked,
+                        target_language: targetLanguageSelect.value,
+                        translation_callback: onTranslation
+                    };
+
+                    // Update UI - connecting
+                    recordBtn.textContent = '⏳';
+                    recordBtn.disabled = true;
+                    status.className = 'status connecting';
+                    status.classList.remove('hidden');
+                    status.textContent = 'Connecting to server...';
+                    
+                    // Create and start client
+                    client = new WhisperLiveClient(config);
+                    await client.start();
+
+                    // Update UI - recording
+                    isRecording = true;
+                    recordBtn.textContent = '⏹️';
+                    recordBtn.classList.add('recording');
+                    recordBtn.disabled = false;
+                    status.classList.add('hidden');
+                    liveIndicator.classList.remove('hidden');
+                    
+                    // Clear previous transcription
+                    transcriptionDiv.textContent = 'Listening...';
+                    if (enableTranslationCheckbox.checked) {
+                        translationDiv.textContent = 'Translation will appear here...';
+                    }
+
+                } catch (error) {
+                    console.error('Failed to start recording:', error);
+                    recordBtn.textContent = '🎤';
+                    recordBtn.classList.remove('recording');
+                    recordBtn.disabled = false;
+                    status.className = 'status error';
+                    status.classList.remove('hidden');
+                    status.textContent = 'Error: Failed to start recording';
+                    
+                    if (client) {
+                        client.stop();
+                        client = null;
+                    }
+                }
+            } else {
+                // Stop recording
+                if (client) {
+                    client.stop();
+                    client = null;
+                }
+
+                // Update UI
+                isRecording = false;
+                recordBtn.textContent = '🎤';
+                recordBtn.classList.remove('recording');
+                status.classList.add('hidden');
+                liveIndicator.classList.add('hidden');
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (client) {
+                client.stop();
+            }
+        });
+
+        // Initial log
+        console.log('WhisperLive JavaScript Client initialized');
+        console.log('Configuration matches Python run.py settings');
+    </script>
+</body>
+</html>
